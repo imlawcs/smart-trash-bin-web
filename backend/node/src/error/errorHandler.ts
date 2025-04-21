@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import customError from './customError';
 import { ErrorRequestHandler } from 'express';
 
-const errorHandler : ErrorRequestHandler = async (err: customError, req: Request, res: Response, next: NextFunction) => {
+const errorHandler : ErrorRequestHandler = async (err: any, req: Request, res: Response, next: NextFunction) => {
     if (res.headersSent) {
         // Nếu headers đã được gửi, chuyển lỗi tới middleware mặc định của Express
         return next(err);

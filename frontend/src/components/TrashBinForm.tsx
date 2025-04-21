@@ -4,10 +4,8 @@ import { useTrashBin } from '../contexts/TrashBinContext';
 
 interface FormData {
   name: string;
-  location: string;
-  capacity: number;
-  threshold: number;
-  currentLevel?: number;
+  latitude: number;
+  longitude: number;
 }
 
 const TrashBinForm: React.FC = () => {
@@ -18,35 +16,27 @@ const TrashBinForm: React.FC = () => {
     state: { selectedBin, loading, error }, 
     getTrashBin, 
     createTrashBin, 
-    updateTrashBin, 
-    clearSelected 
+    updateTrashBin 
   } = useTrashBin();
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
-    location: '',
-    capacity: 100,
-    threshold: 80,
-    currentLevel: 0,
+    latitude: 0,
+    longitude: 0,
   });
 
   useEffect(() => {
     if (!isNew && id) {
       getTrashBin(id);
     }
-    return () => {
-      clearSelected();
-    };
-  }, [id, isNew]);
+  }, [id, isNew, getTrashBin]);
 
   useEffect(() => {
     if (selectedBin && !isNew) {
       setFormData({
         name: selectedBin.name,
-        location: selectedBin.location,
-        capacity: selectedBin.capacity,
-        threshold: selectedBin.threshold,
-        currentLevel: selectedBin.currentLevel,
+        latitude: selectedBin.latitude || 0,
+        longitude: selectedBin.longitude || 0,
       });
     }
   }, [selectedBin, isNew]);
@@ -55,27 +45,30 @@ const TrashBinForm: React.FC = () => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: name === 'name' || name === 'location' ? value : Number(value),
+      [name]: name === 'name' ? value : Number(value),
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isNew) {
-      await createTrashBin(formData);
-    } else if (id) {
-      await updateTrashBin(id, formData);
+    try {
+      if (isNew) {
+        await createTrashBin(formData);
+      } else if (id) {
+        await updateTrashBin(id, formData);
+      }
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Error submitting form:', err);
     }
-    
-    navigate('/dashboard');
   };
 
   return (
     <div className="min-h-screen bg-gray-100 pt-20">
       <div className="max-w-xl mx-auto bg-white rounded-lg shadow p-6">
         <h2 className="text-2xl font-bold mb-6">
-          {isNew ? 'Add New Trash Bin' : 'Edit Trash Bin'}
+          {isNew ? 'Thêm Thùng Rác Mới' : 'Chỉnh Sửa Thùng Rác'}
         </h2>
         
         {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
@@ -83,7 +76,7 @@ const TrashBinForm: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 mb-2" htmlFor="name">
-              Bin Name
+              Tên Thùng Rác
             </label>
             <input
               type="text"
@@ -97,74 +90,36 @@ const TrashBinForm: React.FC = () => {
           </div>
           
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="location">
-              Location
+            <label className="block text-gray-700 mb-2" htmlFor="latitude">
+              Vĩ Độ
             </label>
             <input
-              type="text"
-              id="location"
-              name="location"
-              value={formData.location}
+              type="number"
+              id="latitude"
+              name="latitude"
+              value={formData.latitude}
               onChange={handleChange}
               className="w-full p-2 border rounded"
+              step="any"
               required
             />
           </div>
           
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="capacity">
-              Capacity (liters)
+            <label className="block text-gray-700 mb-2" htmlFor="longitude">
+              Kinh Độ
             </label>
             <input
               type="number"
-              id="capacity"
-              name="capacity"
-              value={formData.capacity}
+              id="longitude"
+              name="longitude"
+              value={formData.longitude}
               onChange={handleChange}
               className="w-full p-2 border rounded"
-              min="1"
+              step="any"
               required
             />
           </div>
-          
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2" htmlFor="threshold">
-              Full Threshold (%)
-            </label>
-            <input
-              type="number"
-              id="threshold"
-              name="threshold"
-              value={formData.threshold}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              min="1"
-              max="100"
-              required
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Percentage filled at which the bin is considered full
-            </p>
-          </div>
-          
-          {!isNew && (
-            <div className="mb-6">
-              <label className="block text-gray-700 mb-2" htmlFor="currentLevel">
-                Current Fill Level (liters)
-              </label>
-              <input
-                type="number"
-                id="currentLevel"
-                name="currentLevel"
-                value={formData.currentLevel}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-                min="0"
-                max={formData.capacity}
-                required
-              />
-            </div>
-          )}
           
           <div className="flex justify-between">
             <button
@@ -172,14 +127,14 @@ const TrashBinForm: React.FC = () => {
               onClick={() => navigate('/dashboard')}
               className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
               disabled={loading}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
             >
-              {loading ? 'Saving...' : isNew ? 'Create Bin' : 'Update Bin'}
+              {loading ? 'Đang Lưu...' : isNew ? 'Tạo Thùng Rác' : 'Cập Nhật Thùng Rác'}
             </button>
           </div>
         </form>

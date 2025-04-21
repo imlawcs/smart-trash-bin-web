@@ -1,51 +1,36 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useCallback, useState, memo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTrashBin } from '../contexts/TrashBinContext';
-import { format, differenceInSeconds, differenceInMinutes, differenceInHours, differenceInDays } from 'date-fns';
+import { TrashBin, Compartment } from '../types';
 
 const TrashBinDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { 
-    state: { selectedBin, loading, error },
+    state: { selectedBin, binCache, loading, error, notification },
     getTrashBin,
-    updateTrashBin,
     deleteTrashBin,
-    clearSelected
+    clearSelected,
+    clearNotification,
   } = useTrashBin();
   
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [newLevel, setNewLevel] = useState<number>(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (id) {
+      console.log('Fetching trash bin', { id });
       getTrashBin(id);
     }
-    return () => {
-      clearSelected();
-    };
-  }, [id]);
+  }, [id, getTrashBin]);
 
   useEffect(() => {
-    if (selectedBin) {
-      setNewLevel(selectedBin.currentLevel);
-    }
-  }, [selectedBin]);
+    return () => {
+      console.log('Cleaning up, calling clearSelected');
+      clearSelected();
+    };
+  }, [clearSelected]);
 
-  const handleUpdateLevel = async () => {
-    if (!id || !selectedBin) return;
-    
-    setIsUpdating(true);
-    try {
-      await updateTrashBin(id, { currentLevel: newLevel });
-      setIsUpdating(false);
-    } catch (error) {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!id) return;
     
     try {
@@ -54,29 +39,27 @@ const TrashBinDetail: React.FC = () => {
     } catch (error) {
       // Error is already handled in the context
     }
+  }, [id, deleteTrashBin, navigate]);
+
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
   };
 
-  // Hàm tự tạo để hiển thị thời gian tương đối
-  const getRelativeTimeString = (date: Date): string => {
-    const now = new Date();
-    const seconds = differenceInSeconds(now, date);
-    const minutes = differenceInMinutes(now, date);
-    const hours = differenceInHours(now, date);
-    const days = differenceInDays(now, date);
-
-    if (seconds < 60) {
-      return `${seconds} seconds ago`;
-    } else if (minutes < 60) {
-      return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
-    } else if (hours < 24) {
-      return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-    } else if (days < 30) {
-      return `${days} day${days === 1 ? '' : 's'} ago`;
-    } else {
-      return format(date, 'dd/MM/yyyy');
+  const handleRefresh = () => {
+    if (id) {
+      console.log('Manual refresh triggered', { id });
+      getTrashBin(id);
     }
   };
 
+  // Lấy bin hiện tại, ưu tiên selectedBin nếu có đúng ID
+  const currentBin = id ? 
+    (selectedBin && selectedBin._id === id) ? selectedBin : 
+    (binCache[id] || undefined) : 
+    undefined;
+
+  console.log('Current bin:', currentBin);
+  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex justify-center items-center">
@@ -102,7 +85,7 @@ const TrashBinDetail: React.FC = () => {
     );
   }
 
-  if (!selectedBin) {
+  if (!currentBin) {
     return (
       <div className="min-h-screen bg-gray-100 flex justify-center items-center">
         <div className="max-w-md bg-white rounded-lg shadow p-6 text-center">
@@ -119,107 +102,92 @@ const TrashBinDetail: React.FC = () => {
     );
   }
 
-  const fillPercentage = (selectedBin.currentLevel / selectedBin.capacity) * 100;
-  const formattedLastUpdated = format(new Date(selectedBin.lastUpdated), 'PPpp');
-  const timeAgo = getRelativeTimeString(new Date(selectedBin.lastUpdated));
+  // Xử lý an toàn với compartments - đảm bảo nó tồn tại và là một mảng
+  const compartments = currentBin.compartments && Array.isArray(currentBin.compartments) 
+    ? currentBin.compartments 
+    : [];
+    
+  const defaultCompartments: Compartment[] = [
+    { _id: "1", binId: currentBin._id, type: "plastic", sensorId: "", isFull: false },
+    { _id: "2", binId: currentBin._id, type: "paper", sensorId: "", isFull: false },
+    { _id: "3", binId: currentBin._id, type: "metal", sensorId: "", isFull: false },
+    { _id: "4", binId: currentBin._id, type: "trash", sensorId: "", isFull: false }
+  ];
+
+  // Sử dụng compartments từ dữ liệu bin hoặc sử dụng mặc định nếu trống
+  const compartmentsToShow = compartments.length > 0 ? compartments : defaultCompartments;
+
+  console.log('Compartments to show:', compartmentsToShow);
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Notification */}
+      {notification && (
+        <div className="fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg flex items-center space-x-4">
+          <div>
+            <p className="font-semibold">{notification.message}</p>
+            <p>Compartment: {notification.compartmentType} (Bin ID: {notification.binId})</p>
+          </div>
+          <button
+            onClick={clearNotification}
+            className="text-white hover:text-gray-200"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto pt-10 px-4">
-        <div className="mb-6 flex items-center">
-          <Link to="/dashboard" className="text-blue-500 hover:underline mr-2">
-            &larr; Back to Dashboard
-          </Link>
+        <div className="mb-6 flex items-center space-x-4">
+          <button
+            onClick={handleBackToDashboard}
+            className="text-blue-500 hover:underline"
+          >
+            ← Back to Dashboard
+          </button>
+          <button
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Refresh Data
+          </button>
         </div>
 
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">{selectedBin.name}</h1>
-                <p className="text-gray-600">{selectedBin.location}</p>
+                <h1 className="text-2xl font-bold text-gray-800">{currentBin.name}</h1>
+                <p className="text-gray-600">{currentBin.location || 'No location'}</p>
               </div>
-              <span 
-                className={`px-3 py-1 rounded text-white ${selectedBin.isFull ? 'bg-red-500' : 'bg-green-500'}`}
-              >
-                {selectedBin.isFull ? 'Full' : 'Available'}
-              </span>
             </div>
 
             <div className="mt-8">
-              <h2 className="text-lg font-semibold mb-4">Current Status</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <div className="mb-6">
-                    <div className="flex justify-between items-center text-sm mb-1">
-                      <span>Fill Level</span>
-                      <span>{Math.round(fillPercentage)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-4">
-                      <div 
-                        className={`${selectedBin.isFull ? 'bg-red-500' : 'bg-green-500'} h-4 rounded-full`} 
-                        style={{ width: `${fillPercentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Current Level</p>
-                      <p className="font-semibold">{selectedBin.currentLevel} liters</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Total Capacity</p>
-                      <p className="font-semibold">{selectedBin.capacity} liters</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Full Threshold</p>
-                      <p className="font-semibold">{selectedBin.threshold}%</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Space Left</p>
-                      <p className="font-semibold">{selectedBin.capacity - selectedBin.currentLevel} liters</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded">
-                  <h3 className="font-medium mb-3">Update Fill Level</h3>
-                  <div className="mb-4">
-                    <input
-                      type="range"
-                      min="0"
-                      max={selectedBin.capacity}
-                      value={newLevel}
-                      onChange={(e) => setNewLevel(Number(e.target.value))}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>0</span>
-                      <span>{newLevel} liters</span>
-                      <span>{selectedBin.capacity}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleUpdateLevel}
-                    disabled={isUpdating || newLevel === selectedBin.currentLevel}
-                    className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
+              <h2 className="text-lg font-semibold mb-4">Compartments</h2>
+              <div className="grid grid-cols-2 gap-4">
+                {compartmentsToShow.map((compartment) => (
+                  <div
+                    key={compartment._id}
+                    className="p-4 bg-gray-50 rounded-lg shadow"
                   >
-                    {isUpdating ? 'Updating...' : 'Update Level'}
-                  </button>
-                </div>
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-md font-medium capitalize">{compartment.type}</h3>
+                      <span
+                        className={`px-2 py-1 rounded text-xs text-white ${
+                          compartment.isFull ? 'bg-red-500' : 'bg-green-500'
+                        }`}
+                      >
+                        {compartment.isFull ? 'Full' : 'Available'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-
-            <div className="mt-8 text-sm text-gray-500">
-              <p>Last updated: {timeAgo}</p>
-              <p>Exact time: {formattedLastUpdated}</p>
             </div>
 
             <div className="mt-8 pt-6 border-t flex justify-between">
               <Link
-                to={`/trash-bins/edit/${selectedBin._id}`}
+                to={`/trash-bins/edit/${currentBin._id}`}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
               >
                 Edit Details
@@ -256,4 +224,4 @@ const TrashBinDetail: React.FC = () => {
   );
 };
 
-export default TrashBinDetail;
+export default memo(TrashBinDetail);
