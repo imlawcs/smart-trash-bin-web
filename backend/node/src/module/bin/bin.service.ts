@@ -6,7 +6,7 @@ class BinService implements IBinService {
 
   async getBinById(id: string): Promise<Bin> {
     const bin : Bin | null = await BinSchema.findById(id);
-    console.log('Tìm bin trong service với ID:', id);
+    // console.log('Tìm bin trong service với ID:', id);
     if (!bin) {
       throw new Error('Bin not found');
     }

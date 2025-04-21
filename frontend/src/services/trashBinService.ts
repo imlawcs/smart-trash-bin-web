@@ -1,5 +1,5 @@
 import api from './api';
-import { TrashBin } from '../types';
+import { TrashBin, Compartment } from '../types';
 
 const retry = async <T>(fn: () => Promise<T>, retries: number = 3, delay: number = 1000): Promise<T> => {
   for (let i = 0; i < retries; i++) {
@@ -70,5 +70,18 @@ export const deleteTrashBin = async (id: string): Promise<void> => {
   } catch (error) {
     console.error(`Error deleting trash bin ${id}:`, error);
     throw new Error(`Failed to delete trash bin with ID ${id}. Please try again later.`);
+  }
+};
+
+export const getCompartmentsByBinId = async (binId: string): Promise<Compartment[]> => {
+  try {
+    return await retry(async () => {
+      const response = await api.get(`/trash-bin/compartments/${binId}`); // Giả định endpoint BE
+      console.log('API compartments response:', response.data);
+      return response.data;
+    });
+  } catch (error) {
+    console.error(`Error fetching compartments for bin ${binId}:`, error);
+    throw new Error(`Failed to fetch compartments for bin ID ${binId}. Please try again later.`);
   }
 };

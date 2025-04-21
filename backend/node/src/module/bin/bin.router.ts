@@ -5,6 +5,7 @@ const binRouter = Router();
 
 binRouter.get("/", binController.getAllBins);
 binRouter.get("/:id", binController.getTrashBinById);
+binRouter.get("/compartments/:id", binController.getCompartmentsByBinId); 
 binRouter.post("/", binController.createBin);
 binRouter.put("/:id", binController.updateBin);
 binRouter.delete("/:id", binController.deleteBin);

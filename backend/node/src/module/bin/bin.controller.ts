@@ -17,7 +17,7 @@ class BinController {
     async getTrashBinById(req: any, res: any): Promise<void> {
         try {
             const id = req.params.id;
-            console.log("ID from request params:", id);
+            // console.log("ID from request params:", id);
             const bin = await binService.getBinById(id);
             if (!bin) {
                 return res.status(404).json({ message: 'Trash bin not found' });
@@ -76,6 +76,23 @@ class BinController {
             res.status(500).json({ message: "Internal server error" });
         }
     }
+
+    public async getCompartmentsByBinId(req: any, res: any, next: any): Promise<void> { 
+        const binId = req.params.id;
+        try {
+            const compartments = await Compartment.find({ binId });
+            console.log("Compartments:", compartments);
+            
+            if (!compartments) {
+                return res.status(404).json({ message: 'Compartments not found' });
+            }
+            res.status(200).json(compartments);
+        } catch (error) {
+            next(error);
+            res.status(500).json({ message: "Internal server error" });
+        }
+    }
+
 }
 
 export default new BinController();

@@ -1,27 +1,33 @@
+// TrashBinDetail.tsx
 import React, { useEffect, useCallback, useState, memo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTrashBin } from '../contexts/TrashBinContext';
-import { TrashBin, Compartment } from '../types';
+import { Compartment } from '../types';
 
 const TrashBinDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { 
-    state: { selectedBin, binCache, loading, error, notification },
+  const {
+    state: { selectedBin, binCache, compartments, loading, error, notification },
     getTrashBin,
+    getCompartmentsByBinId, // Thêm hàm mới
     deleteTrashBin,
     clearSelected,
     clearNotification,
   } = useTrashBin();
-  
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (id) {
-      console.log('Fetching trash bin', { id });
+      console.log('Fetching trash bin and compartments', { id });
       getTrashBin(id);
+      getCompartmentsByBinId(id);
     }
-  }, [id, getTrashBin]);
+  }, [id, getTrashBin, getCompartmentsByBinId]);
+  
+  // Thêm log để debug
+  console.log('Compartments in state:', compartments);
 
   useEffect(() => {
     return () => {
@@ -32,7 +38,7 @@ const TrashBinDetail: React.FC = () => {
 
   const handleDelete = useCallback(async () => {
     if (!id) return;
-    
+
     try {
       await deleteTrashBin(id);
       navigate('/dashboard');
@@ -49,17 +55,18 @@ const TrashBinDetail: React.FC = () => {
     if (id) {
       console.log('Manual refresh triggered', { id });
       getTrashBin(id);
+      getCompartmentsByBinId(id); // Refresh cả compartments
     }
   };
 
-  // Lấy bin hiện tại, ưu tiên selectedBin nếu có đúng ID
-  const currentBin = id ? 
-    (selectedBin && selectedBin._id === id) ? selectedBin : 
-    (binCache[id] || undefined) : 
-    undefined;
+  const currentBin = id
+    ? (selectedBin && selectedBin._id === id)
+      ? selectedBin
+      : (binCache[id] || undefined)
+    : undefined;
 
   console.log('Current bin:', currentBin);
-  
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex justify-center items-center">
@@ -102,26 +109,22 @@ const TrashBinDetail: React.FC = () => {
     );
   }
 
-  // Xử lý an toàn với compartments - đảm bảo nó tồn tại và là một mảng
-  const compartments = currentBin.compartments && Array.isArray(currentBin.compartments) 
-    ? currentBin.compartments 
-    : [];
-    
+  // Sử dụng compartments từ context hoặc mặc định nếu chưa có dữ liệu
   const defaultCompartments: Compartment[] = [
     { _id: "1", binId: currentBin._id, type: "plastic", sensorId: "", isFull: false },
     { _id: "2", binId: currentBin._id, type: "paper", sensorId: "", isFull: false },
     { _id: "3", binId: currentBin._id, type: "metal", sensorId: "", isFull: false },
-    { _id: "4", binId: currentBin._id, type: "trash", sensorId: "", isFull: false }
+    { _id: "4", binId: currentBin._id, type: "trash", sensorId: "", isFull: false },
   ];
 
-  // Sử dụng compartments từ dữ liệu bin hoặc sử dụng mặc định nếu trống
-  const compartmentsToShow = compartments.length > 0 ? compartments : defaultCompartments;
+  console.log('Compartments from context:', compartments);
+
+  const compartmentsToShow = compartments && compartments.length > 0 ? compartments : defaultCompartments;
 
   console.log('Compartments to show:', compartmentsToShow);
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Notification */}
       {notification && (
         <div className="fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg flex items-center space-x-4">
           <div>
@@ -192,7 +195,7 @@ const TrashBinDetail: React.FC = () => {
               >
                 Edit Details
               </Link>
-              
+
               {showDeleteConfirm ? (
                 <div className="flex space-x-2">
                   <button
