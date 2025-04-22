@@ -1,0 +1,7 @@
+{
+    "metal": 0,
+    "paper": 1,
+    "plastic": 2,
+    "trash_cardboard": 3,
+    "trash_trash": 4
+}
