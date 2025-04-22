@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import Compartment from '../../module/compartment/compartment.service';
-import { sendTrashFullAlert } from '../../socket/socket';
+import Compartment from '../compartment/compartment.service';
+import { sendTrashFullAlert, sendTrashAvailableAlert } from '../../socket/socket';
+import Bin from '../bin/bin.service';
 
 export const handleSensorData = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -11,19 +12,32 @@ export const handleSensorData = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    // Kiểm tra trạng thái hiện tại của compartment
+    const bin = await Bin.getBinById(binId);
+    if (!bin) {
+      res.status(404).json({ message: 'Bin not found' });
+      return;
+    }
+    const binName = bin.name;
+    
     const compartment = await Compartment.getCompartmentBySensorId(sensorId);
     if (compartment && compartment.isFull !== isFull) { // Chỉ gửi nếu trạng thái thay đổi
       await Compartment.setCompartmentStatus(sensorId, isFull);
 
+      // Gửi thông báo cho cả trạng thái đầy và không đầy
       if (isFull) {
-        console.log(`Sensor ${sensorId} reports FULL in ${compartmentType}`);
         sendTrashFullAlert({
           binId,
           compartmentType,
           sensorId,
         });
       }
+      else {
+        sendTrashAvailableAlert({
+          binId,
+          compartmentType,
+          sensorId,
+        });
+      }      
     }
 
     res.status(200).json({ message: 'Sensor data processed successfully' });

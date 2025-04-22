@@ -112,9 +112,9 @@ const TrashBinDetail: React.FC = () => {
   // Sử dụng compartments từ context hoặc mặc định nếu chưa có dữ liệu
   const defaultCompartments: Compartment[] = [
     { _id: "1", binId: currentBin._id, type: "plastic", sensorId: "", isFull: false },
-    { _id: "2", binId: currentBin._id, type: "paper", sensorId: "", isFull: false },
     { _id: "3", binId: currentBin._id, type: "metal", sensorId: "", isFull: false },
     { _id: "4", binId: currentBin._id, type: "trash", sensorId: "", isFull: false },
+    { _id: "2", binId: currentBin._id, type: "paper", sensorId: "", isFull: false },
   ];
 
   console.log('Compartments from context:', compartments);
@@ -126,7 +126,7 @@ const TrashBinDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       {notification && (
-        <div className="fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg flex items-center space-x-4">
+        <div className={`fixed top-4 right-4 ${notification.message.includes('full') ? 'bg-red-500' : 'bg-green-500'} text-white p-4 rounded-lg shadow-lg flex items-center space-x-4`}>
           <div>
             <p className="font-semibold">{notification.message}</p>
             <p>Compartment: {notification.compartmentType} (Bin ID: {notification.binId})</p>

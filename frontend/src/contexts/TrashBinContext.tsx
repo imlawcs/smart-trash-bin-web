@@ -1,4 +1,3 @@
-// TrashBinContext.tsx
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
 import { TrashBin, Compartment } from '../types';
 import * as trashBinService from '../services/trashBinService';
@@ -11,7 +10,7 @@ interface TrashBinState {
   loading: boolean;
   error: string | null;
   selectedBin: TrashBin | null;
-  compartments: Compartment[] | null; // Thêm trạng thái cho compartments
+  compartments: Compartment[] | null;
   ongoingRequests: Set<string>;
   notification: { message: string; binId: string; compartmentType: string } | null;
 }
@@ -20,7 +19,7 @@ interface TrashBinContextProps {
   state: TrashBinState;
   getTrashBins: () => Promise<void>;
   getTrashBin: (id: string) => Promise<void>;
-  getCompartmentsByBinId: (binId: string) => Promise<void>; // Thêm hàm mới
+  getCompartmentsByBinId: (binId: string) => Promise<void>;
   createTrashBin: (data: Partial<TrashBin>) => Promise<void>;
   updateTrashBin: (id: string, data: Partial<TrashBin>) => Promise<void>;
   deleteTrashBin: (id: string) => Promise<void>;
@@ -34,7 +33,7 @@ const initialState: TrashBinState = {
   loading: false,
   error: null,
   selectedBin: null,
-  compartments: null, // Khởi tạo compartments
+  compartments: null,
   ongoingRequests: new Set(),
   notification: null,
 };
@@ -42,7 +41,7 @@ const initialState: TrashBinState = {
 type TrashBinAction =
   | { type: 'GET_BINS_SUCCESS'; payload: TrashBin[] }
   | { type: 'GET_BIN_SUCCESS'; payload: TrashBin }
-  | { type: 'GET_COMPARTMENTS_SUCCESS'; payload: Compartment[] } // Thêm action mới
+  | { type: 'GET_COMPARTMENTS_SUCCESS'; payload: Compartment[] }
   | { type: 'CREATE_BIN_SUCCESS'; payload: TrashBin }
   | { type: 'UPDATE_BIN_SUCCESS'; payload: TrashBin }
   | { type: 'DELETE_BIN_SUCCESS'; payload: string }
@@ -73,7 +72,7 @@ const trashBinReducer = (state: TrashBinState, action: TrashBinAction): TrashBin
         loading: false,
         error: null,
       };
-    case 'GET_COMPARTMENTS_SUCCESS': // Xử lý compartments
+    case 'GET_COMPARTMENTS_SUCCESS':
       return { ...state, compartments: action.payload, loading: false, error: null };
     case 'CREATE_BIN_SUCCESS':
       return {
@@ -100,14 +99,14 @@ const trashBinReducer = (state: TrashBinState, action: TrashBinAction): TrashBin
         trashBins: state.trashBins.filter((bin) => bin._id !== action.payload),
         binCache: newBinCache,
         selectedBin: null,
-        compartments: null, // Xóa compartments khi xóa bin
+        compartments: null,
         loading: false,
         error: null,
       };
     case 'BIN_ERROR':
       return { ...state, error: action.payload, loading: false };
-      case 'CLEAR_SELECTED':
-        return { ...state, selectedBin: null }; // Giữ nguyên compartments
+    case 'CLEAR_SELECTED':
+      return { ...state, selectedBin: null };
     case 'ADD_REQUEST':
       return { ...state, ongoingRequests: new Set(state.ongoingRequests).add(action.payload) };
     case 'REMOVE_REQUEST':
@@ -150,13 +149,25 @@ export const TrashBinProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setTimeout(() => {
         dispatch({ type: 'CLEAR_NOTIFICATION' });
       }, 5000);
-      if (lastFetchedBinId.current !== data.binId) {
-        lastFetchedBinId.current = data.binId;
-        getCompartmentsByBinId(data.binId); // Cập nhật compartments khi có thông báo
-      }
+      getCompartmentsByBinId(data.binId);
     };
 
-    initSocket(handleTrashFull);
+    const handleTrashAvailable = (data: { message: string; binId: string; compartmentType: string; sensorId?: string; timestamp: string }) => {
+      dispatch({
+        type: 'SET_NOTIFICATION',
+        payload: {
+          message: data.message,
+          binId: data.binId,
+          compartmentType: data.compartmentType,
+        },
+      });
+      setTimeout(() => {
+        dispatch({ type: 'CLEAR_NOTIFICATION' });
+      }, 5000);
+      getCompartmentsByBinId(data.binId);
+    };
+
+    initSocket(handleTrashFull, handleTrashAvailable);
 
     return () => {
       disconnectSocket();
@@ -202,7 +213,6 @@ export const TrashBinProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     dispatch({ type: 'SET_LOADING' });
     try {
       const compartments = await trashBinService.getCompartmentsByBinId(binId);
-      
       dispatch({ type: 'GET_COMPARTMENTS_SUCCESS', payload: compartments });
     } catch (error) {
       console.log('Error fetching compartments:', error);
@@ -256,7 +266,7 @@ export const TrashBinProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         state,
         getTrashBins,
         getTrashBin,
-        getCompartmentsByBinId, // Thêm vào value
+        getCompartmentsByBinId,
         createTrashBin,
         updateTrashBin,
         deleteTrashBin,
