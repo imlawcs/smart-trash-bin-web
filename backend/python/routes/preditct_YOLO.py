@@ -12,8 +12,13 @@ router = APIRouter()
 
 # Danh sách nhãn theo thứ tự training
 CLASS_NAMES = ['metal', 'paper', 'plastic', 'trash', 'cardboard']
-TRASH_CATEGORIES = {name: i for i, name in enumerate(CLASS_NAMES)}
-
+TRASH_CATEGORIES = {
+    'metal': 0,
+    'paper': 1,
+    'plastic': 2,
+    'trash': 3,
+    'cardboard': 3
+}
 # Load mô hình YOLOv8 đã train
 MODEL_PATH = "models/best.pt"
 try:
