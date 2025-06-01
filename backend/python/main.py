@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from services import servoControl
-from routes import predict  # Thêm predict
+from routes import predict_YOLO  # Thêm predict
 import socket
 
 app = FastAPI()
@@ -10,7 +10,7 @@ def home():
     return {"message": "Server is running!"}
 
 # Đăng ký các route
-app.include_router(predict.router)  # API /predict
+app.include_router(predict_YOLO.router)  # API /predict
 app.include_router(servoControl.router)  # API /get-servo-command
 
 # Lấy địa chỉ IP của máy chủ
