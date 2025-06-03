@@ -5,7 +5,7 @@ import { string } from 'joi';
 
 dotenv.config();
 
-const jwtSecret = process.env.JWT_SECRET as string;
+const jwtSecret = process.env.JWT_SECRET as string || 'abc';
 
 class AuthMiddleware {
     private getTokenFromHeader(req: Request, res: Response): string | void {
@@ -34,13 +34,15 @@ class AuthMiddleware {
     authenticateToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const token = this.getTokenFromHeader(req, res);
+            
             if (!token) return;
-            const decoded = this.verifyToken(token, res);
+            const decoded = jwt.verify(token, jwtSecret);
             if (!decoded || typeof decoded == 'string') return;
             req.user = decoded;
             next();
         }
         catch (error) {
+            console.error('Error in authenticateToken:', error);
             res.status(401).send({ message: 'Unauthorized: Invalid token' });
         }
     }

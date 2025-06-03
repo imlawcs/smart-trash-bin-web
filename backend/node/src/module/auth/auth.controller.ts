@@ -24,6 +24,7 @@ class AuthController {
             const loginStatus = await authServices.login(user);
             res.status(200).send(loginStatus);
         } catch (error) {
+            // console.log("Error in login:", error);            
             next(error);
             res.status(500).json({ message: "Internal server error" });
         }

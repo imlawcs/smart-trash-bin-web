@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import Compartment from '../compartment/compartment.service';
 import { sendTrashFullAlert, sendTrashAvailableAlert } from '../../socket/socket';
 import Bin from '../bin/bin.service';
+import mailService from '../../middlewares/mailService';
+import userService from '../user/user.service';
 
 export const handleSensorData = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -29,6 +31,22 @@ export const handleSensorData = async (req: Request, res: Response): Promise<voi
           binId,
           compartmentType,
           sensorId,
+        });
+
+        const email = await userService.getEmailById(req.user.id);
+        console.log(`Sending email to ${email} for full compartment alert`);
+        if (!email) {
+          console.error('No email found for user:', req.user.id);
+          res.status(404).json({ message: 'User email not found' });
+          return;
+        }        
+
+        // Gửi email thông báo với thông tin ngăn đầy
+        mailService.sendEmail({
+          emailFrom: 'daolehanhnguyen@gmail.com',
+          emailTo: email,
+          emailSubject: `Trash Bin ${binName} - ${compartmentType} Compartment Full Alert`,
+          emailText: `The ${compartmentType} compartment in trash bin ${binName} is full! Please empty it as soon as possible.`,
         });
       }
       else {

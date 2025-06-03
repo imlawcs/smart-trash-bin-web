@@ -13,6 +13,14 @@ class UserService implements IUserService {
             name: user.name
         }
     }
+
+    async getEmailById(id: number): Promise<string> {
+        const user = await UserSchema.findById(id);
+        if (!user) {
+            throw new Error("User not found");
+        }
+        return user.email;
+    }
 }
 
 export default new UserService();
