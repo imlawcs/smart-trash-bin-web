@@ -78,7 +78,7 @@ async def predict_trash(file: UploadFile = File(...)):
 
         with lock:
             results.append((most_common_label, average_conf))
-            if len(results) == 5:
+            if len(results) == 3:
                 label_counts = Counter(label for label, _ in results)
                 final_label = label_counts.most_common(1)[0][0]
                 final_conf = np.mean([conf for label, conf in results if label == final_label])
@@ -96,7 +96,7 @@ async def predict_trash(file: UploadFile = File(...)):
                     "confidence": round(final_conf, 2),
                     "servo_id": servo_id,
                     "image_saved": image_filename,
-                    "message": "✅ Đã xử lý 5 ảnh và xác định kết quả cuối cùng."
+                    "message": "✅ Đã xử lý 3 ảnh và xác định kết quả cuối cùng."
                 }
 
         return {
