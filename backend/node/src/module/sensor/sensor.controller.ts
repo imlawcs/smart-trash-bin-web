@@ -33,18 +33,18 @@ export const handleSensorData = async (req: Request, res: Response): Promise<voi
           sensorId,
         });
 
-        const email = await userService.getEmailById(req.user.id);
-        console.log(`Sending email to ${email} for full compartment alert`);
-        if (!email) {
-          console.error('No email found for user:', req.user.id);
-          res.status(404).json({ message: 'User email not found' });
-          return;
-        }        
+        // const email = await userService.getEmailById(req.user.id);
+        // console.log(`Sending email to ${email} for full compartment alert`);
+        // if (!email) {
+        //   console.error('No email found for user:', req.user.id);
+        //   res.status(404).json({ message: 'User email not found' });
+        //   return;
+        // }        
 
         // Gửi email thông báo với thông tin ngăn đầy
         mailService.sendEmail({
           emailFrom: 'daolehanhnguyen@gmail.com',
-          emailTo: email,
+          emailTo: 'daolehanhnguyen@gmail.com',
           emailSubject: `Trash Bin ${binName} - ${compartmentType} Compartment Full Alert`,
           emailText: `The ${compartmentType} compartment in trash bin ${binName} is full! Please empty it as soon as possible.`,
         });

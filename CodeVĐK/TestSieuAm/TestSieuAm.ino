@@ -48,23 +48,23 @@ void loop() {
   long d3 = readDistance(TRIG3, ECHO3);
   long d4 = readDistance(TRIG4, ECHO4);
 
-  if (d1 > 0 && d1 < 10) {
+  if (d1 > 0 && d1 < 15) {
     Serial.print("📏 Cảm biến 1: "); Serial.print(d1); Serial.println(" cm");
   }
-  if (d2 > 0 && d2 < 10) {
+  if (d2 > 0 && d2 < 15) {
     Serial.print("📏 Cảm biến 2: "); Serial.print(d2); Serial.println(" cm");
   }
-  if (d3 > 0 && d3 < 10) {
+  if (d3 > 0 && d3 < 15) {
     Serial.print("📏 Cảm biến 3: "); Serial.print(d3); Serial.println(" cm");
   }
-  if (d4 > 0 && d4 < 10) {
+  if (d4 > 0 && d4 < 15) {
     Serial.print("📏 Cảm biến 4: "); Serial.print(d4); Serial.println(" cm");
   }
 
-  digitalWrite(SIGNAL1, (d1 > 0 && d1 < 10) ? HIGH : LOW);
-  digitalWrite(SIGNAL2, (d2 > 0 && d2 < 10) ? HIGH : LOW);
-  digitalWrite(SIGNAL3, (d3 > 0 && d3 < 10) ? HIGH : LOW);
-  digitalWrite(SIGNAL4, (d4 > 0 && d4 < 10) ? HIGH : LOW);
+  digitalWrite(SIGNAL1, (d1 > 0 && d1 < 15) ? HIGH : LOW);
+  digitalWrite(SIGNAL2, (d2 > 0 && d2 < 15) ? HIGH : LOW);
+  digitalWrite(SIGNAL3, (d3 > 0 && d3 < 15) ? HIGH : LOW);
+  digitalWrite(SIGNAL4, (d4 > 0 && d4 < 15) ? HIGH : LOW);
 
-  delay(300); // nghỉ giữa các lần đo
+  delay(300); 
 }

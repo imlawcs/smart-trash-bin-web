@@ -6,7 +6,7 @@ import mailService from '../../middlewares/mailService';
 
 const router = express.Router();
 
-router.post('/', auth.authenticateToken, handleSensorData);
+router.post('/', handleSensorData);
 router.get('/test', auth.authenticateToken, mailService.sendEmail);
 
 export default router;

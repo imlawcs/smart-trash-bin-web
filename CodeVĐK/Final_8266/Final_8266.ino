@@ -7,11 +7,11 @@ const char* ssid = "Vsmax";
 const char* password = "08042004";
 
 // Server Flask (điều khiển servo)
-const char* resultServerUrl = "http://192.168.234.171:8000/get-result";
-const char* logServerUrl    = "http://192.168.234.171:8000/log";
+const char* resultServerUrl = "http://192.168.187.171:8000/get-result";
+const char* logServerUrl    = "http://192.168.187.171:8000/log";
 
 // Server NodeJS (cập nhật trạng thái thùng rác)
-const char* binStatusServer = "http://192.168.234.171:5000/api/sensor";
+const char* binStatusServer = "http://192.168.187.171:5000/api/sensor";
 
 // Thùng rác (tín hiệu từ Arduino gửi đến các chân này)
 #define BIN1_PIN D1  // metal - GPIO5
@@ -31,7 +31,7 @@ Servo servo1, servo2, servo3, servo4;
 bool lastBinState[4] = {false, false, false, false};
 
 // ID cố định và thông tin cảm biến
-String binId = "67fe9d8e5b88e664fce895f2";
+String binId = "683e2cedb88614cbd88f20a9";
 String compartmentType[4] = {"metal", "paper", "plastic", "trash"};
 String sensorId[4] = {
   "esp8266-metal", "esp8266-paper", "esp8266-plastic", "esp8266-trash"
@@ -83,21 +83,21 @@ void openServo(Servo &servo, String name) {
   sendLog("🛠️ Mở " + name);
 
   if (name == "Servo 1") {
-    servo.writeMicroseconds(1200);
+    servo.writeMicroseconds(1150);
     delay(2000);
-    servo.writeMicroseconds(1650);
+    servo.writeMicroseconds(1740);
   } else if (name == "Servo 2") {
-    servo.writeMicroseconds(1300);
+    servo.writeMicroseconds(1400);
     delay(2000);
-    servo.writeMicroseconds(2000);
+    servo.writeMicroseconds(2060);
   } else if (name == "Servo 3") {
     servo.writeMicroseconds(1300);
     delay(2000);
-    servo.writeMicroseconds(1900);
+    servo.writeMicroseconds(1940);
   } else if (name == "Servo 4") {
     servo.writeMicroseconds(1100);
     delay(2000);
-    servo.writeMicroseconds(1800);
+    servo.writeMicroseconds(1780);
   }
 
   sendLog("✅ " + name + " đã đóng.");
@@ -127,10 +127,10 @@ void setup() {
   servo4.attach(SERVO4_PIN, 500, 2500);
 
   // Đưa servo về vị trí ban đầu
-  servo1.writeMicroseconds(1650);
-  servo2.writeMicroseconds(2000);
-  servo3.writeMicroseconds(1900);
-  servo4.writeMicroseconds(1800);
+  servo1.writeMicroseconds(1740);
+  servo2.writeMicroseconds(2060);
+  servo3.writeMicroseconds(1940);
+  servo4.writeMicroseconds(1780);
 }
 
 void loop() {

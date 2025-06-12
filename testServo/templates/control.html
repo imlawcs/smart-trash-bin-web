@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servo Control</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg">
+        <h1 class="text-2xl font-bold mb-6 text-center">Servo Control Panel</h1>
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="setServo(0)" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Open Metal Servo
+            </button>
+            <button onclick="setServo(1)" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                Open Paper Servo
+            </button>
+            <button onclick="setServo(2)" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
+                Open Plastic Servo
+            </button>
+            <button onclick="setServo(3)" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                Open Trash Servo
+            </button>
+        </div>
+        <p id="status" class="mt-4 text-center text-gray-600"></p>
+    </div>
+
+    <script>
+        async function setServo(servoId) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = 'Sending command...';
+            try {
+                const response = await fetch(`/set-servo/${servoId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    statusElement.textContent = data.message;
+                    statusElement.classList.remove('text-red-600');
+                    statusElement.classList.add('text-green-600');
+                } else {
+                    statusElement.textContent = data.detail || 'Error setting servo';
+                    statusElement.classList.remove('text-green-600');
+                    statusElement.classList.add('text-red-600');
+                }
+            } catch (error) {
+                statusElement.textContent = 'Network error: ' + error.message;
+                statusElement.classList.remove('text-green-600');
+                statusElement.classList.add('text-red-600');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,17 +1,20 @@
 #include "esp_camera.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <ESP32Servo.h>
 
 // Cấu hình WiFi
 const char* ssid = "Vsmax";  
 const char* password = "08042004";  
-const char* uploadUrl = "http://192.168.234.171:8000/predict";  
-const char* statusUrl = "http://192.168.234.171:8000/check_status";  
-const char* logServerUrl = "http://192.168.234.171:8000/log";  
+const char* uploadUrl = "http://192.168.187.171:8000/predict";  
+const char* statusUrl = "http://192.168.187.171:8000/check_status";  
+const char* logServerUrl = "http://192.168.187.171:8000/log";  
 const char* boundary = "----ESP32BOUNDARY";
 
 #define IR_SENSOR_PIN 13 // Cảm biến hồng ngoại
+#define SERVO_PIN 14
 
+Servo doorServo;
 // Hàm gửi log lên server
 int detectionCount = 0; // Đếm số lần nhận diện
 void sendLog(String message) {
@@ -108,11 +111,21 @@ void sendFiveImages() {
     }
     delay(200); // Delay nhỏ để camera ổn định lại sau khi flush
 
-    for (int i = 1; i <= 20; i++) {
-        sendLog("📷 Gửi ảnh " + String(i) + " trên 20...");
+    for (int i = 1; i <= 3; i++) {
+        sendLog("📷 Gửi ảnh " + String(i) + " trên 3...");
         sendImage();
-        delay(5000);  // Bạn có thể chỉnh lại delay tùy tốc độ mạng
+        delay(1000);  // Bạn có thể chỉnh lại delay tùy tốc độ mạng
     }
+}
+// Hàm điều khiển servo
+void closeDoor() {
+    doorServo.write(0);  
+    sendLog("🚪 Cửa chắn đã đóng.");
+}
+
+void openDoor() {
+    doorServo.write(180); 
+    sendLog("🚪 Cửa chắn đã mở.");
 }
 void setup() {
     Serial.begin(115200);
@@ -123,9 +136,13 @@ void setup() {
         delay(500);
         sendLog(".");
     }
+    
     sendLog("✅ ESP32-CAM đã kết nối WiFi!");
     Serial.println("✅ ESP32-CAM đã kết nối WiFi!");
-    
+
+    doorServo.attach(SERVO_PIN);
+    openDoor();
+
     IPAddress serverIP;
     if (WiFi.hostByName("192.168.90.171", serverIP)) {
       Serial.println("✅ Có thể truy cập server từ ESP32-CAM!");
@@ -192,10 +209,12 @@ void loop() {
     if (currentState && !isDetecting) { // Bắt đầu lần nhận diện 5 ảnh mới
         detectionCount++;
         isDetecting = true;
-        sendLog("📷 Phát hiện vật cản, bắt đầu lần nhận diện 20 ảnh...");
-        
+        sendLog("📷 Phát hiện vật cản, bắt đầu lần nhận diện 3 ảnh...");
+        sendLog("👀 Chờ 3s để ổn định...");
+        delay(3000);
+        closeDoor();
         sendFiveImages(); // Gửi ảnh bất kể trạng thái server
-        sendLog("✅ Hoàn thành gửi 20 ảnh. Chờ server xử lý...");
+        sendLog("✅ Hoàn thành gửi 3 ảnh. Chờ server xử lý...");
 
         if (checkProcessingStatus()) {
             sendLog("⏸ Server đã xử lý xong.");
@@ -206,6 +225,7 @@ void loop() {
     } else if (!currentState && isDetecting) { // Kết thúc lần nhận diện
         isDetecting = false;
         sendLog("✅ Kết thúc lần nhận diện.");
+        openDoor();
     }
     delay(500);
 }

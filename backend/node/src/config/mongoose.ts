@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/trash-bin-monitoring?replicaSet=rs0';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://custina0987123:lxh123456@trash-bin-cluster.obxswhv.mongodb.net/?retryWrites=true&w=majority&appName=trash-bin-cluster';
 
 export const connectDB = async () => {
   try {
